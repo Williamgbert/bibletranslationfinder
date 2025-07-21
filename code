@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="en" >
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Bible Translation Finder Quiz</title>
+  <style>
+    body {
+      font-family: system-ui, sans-serif;
+      background: linear-gradient(135deg, #ebf4ff, #c3dafe);
+      margin: 0;
+      min-height: 100vh;
+      padding: 2rem;
+      display: flex;
+      justify-content: center;
+    }
+    .container {
+      background: white;
+      border-radius: 1rem;
+      max-width: 600px;
+      width: 100%;
+      padding: 2rem;
+      box-shadow: 0 10px 20px rgba(100,100,200,.1);
+      display: flex;
+      flex-direction: column;
+    }
+    h1, h2, h3, h4 {
+      margin-top: 0;
+    }
+    button {
+      cursor: pointer;
+      border-radius: 0.5rem;
+      border: 2px solid transparent;
+      padding: 0.75rem 1.25rem;
+      font-size: 1rem;
+    }
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    .option-btn {
+      border-color: #e2e8f0;
+      background: #f7fafc;
+      text-align: left;
+      width: 100%;
+      margin-bottom: 0.5rem;
+    }
+    .option-btn.selected {
+      border-color: #5a67d8;
+      background: #ebf4ff;
+    }
+    .flex-between {
+      display: flex;
+      justify-content: space-between;
+    }
+    .progress-bar {
+      height: 8px;
+      background: #cbd5e0;
+      border-radius: 9999px;
+      overflow: hidden;
+      margin-bottom: 1rem;
+    }
+    .progress-fill {
+      background: #5a67d8;
+      height: 100%;
+      width: 0%;
+      transition: width 0.4s ease;
+    }
+    .results-container > div {
+      border: 2px solid #cbd5e0;
+      background: #f7fafc;
+      border-radius: 0.75rem;
+      padding: 1rem;
+      margin-bottom: 1rem;
+    }
+    .results-container > div.top {
+      border-color: #5a67d8;
+      background: #ebf4ff;
+    }
+    .small-text {
+      font-size: 0.875rem;
+      color: #4a5568;
+    }
+    .italic {
+      font-style: italic;
+    }
+    .btn-primary {
+      background: #5a67d8;
+      color: white;
+      border-color: transparent;
+    }
+    .btn-primary:hover {
+      background: #434190;
+    }
+    .btn-secondary {
+      background: transparent;
+      border-color: #a0aec0;
+      color: #4a5568;
+    }
+    .btn-secondary:hover {
+      border-color: #718096;
+      color: #2d3748;
+    }
+    .skip-btn {
+      background: none;
+      border: none;
+      color: #718096;
+      margin-top: 1rem;
+      cursor: pointer;
+      text-decoration: underline;
+    }
+    .skip-btn:hover {
+      color: #4a5568;
+    }
+  </style>
+</head>
+<body>
+  <main class="container" id="app">
+    <header>
+      <h1>Find Your Perfect Bible Translation</h1>
+      <p>Finding the right Bible translation is like finding the perfect pair of glasses – when it's right, everything becomes clearer!</p>
+    </header>
+
+    <div id="quiz-container"></div>
+  </main>
+
+<script>
+(() => {
+  const translations = {
+    NIV: { name: "New International Version (NIV)", readingLevel: 7.8, strengths: "Clear, everyday language with scholarly accuracy", idealFor: "Daily devotions, personal study, new believers",
+      scores: { devotions: 9, study: 8, firstTime: 8, teaching: 8, memorizing: 8, comparative: 8, contemporary: 9, traditional: 6, mixed: 8, print: 7, digitalApp: 8, footnotes: 7 }
+    },
+    NLT: { name: "New Living Translation (NLT)", readingLevel: 6.3, strengths: "Very readable, natural English flow", idealFor: "New believers, family devotions, easy reading",
+      scores: { devotions: 9, study: 6, firstTime: 9, teaching: 6, memorizing: 7, comparative: 6, contemporary: 10, traditional: 5, mixed: 8, print: 6, digitalApp: 9, footnotes: 6 }
+    },
+    ESV: { name: "English Standard Version (ESV)", readingLevel: 10.0, strengths: "Word-for-word accuracy with readable English", idealFor: "Serious study, teaching, memorization",
+      scores: { devotions: 7, study: 10, firstTime: 5, teaching: 10, memorizing: 9, comparative: 9, contemporary: 6, traditional: 9, mixed: 8, print: 8, digitalApp: 8, footnotes: 9 }
+    },
+    AMP: { name: "Amplified Bible (AMP)", readingLevel: 12.0, strengths: "Detailed explanation with expanded meaning", idealFor: "In-depth study, understanding nuances",
+      scores: { devotions: 6, study: 10, firstTime: 4, teaching: 9, memorizing: 5, comparative: 10, contemporary: 5, traditional: 8, mixed: 7, print: 7, digitalApp: 7, footnotes: 10 }
+    },
+    MSG: { name: "The Message (MSG)", readingLevel: 5.0, strengths: "Contemporary paraphrase in conversational style", idealFor: "Casual reading, new believers, modern language lovers",
+      scores: { devotions: 10, study: 4, firstTime: 9, teaching: 4, memorizing: 6, comparative: 5, contemporary: 10, traditional: 3, mixed: 6, print: 6, digitalApp: 9, footnotes: 5 }
+    }
+  };
+
+  const questions = [
+    {
+      id: 'primaryGoal',
+      title: "What's your main goal for Bible reading?",
+      options: [
+        { value: 'devotions', label: 'Daily devotions and personal growth' },
+        { value: 'study', label: 'In-depth study and research' },
+        { value: 'firstTime', label: 'Reading through the Bible for the first time' },
+        { value: 'teaching', label: 'Teaching or leading small groups' },
+        { value: 'memorizing', label: 'Memorizing verses' },
+        { value: 'comparative', label: 'Comparative study across translations' }
+      ]
+    },
+    {
+      id: 'languageStyle',
+      title: "How do you prefer language to sound?",
+      options: [
+        { value: 'contemporary', label: "Like they're sitting across from you having coffee" },
+        { value: 'traditional', label: "Like a beautiful, timeless letter you'd treasure forever" },
+        { value: 'mixed', label: "I appreciate both styles" }
+      ]
+    },
+    {
+      id: 'printOrDigital',
+      title: "How do you prefer to read?",
+      options: [
+        { value: 'print', label: "I like physical print Bibles" },
+        { value: 'digitalApp', label: "I prefer digital apps and websites" }
+      ]
+    },
+    {
+      id: 'footnotesImportance',
+      title: "How important are extensive footnotes and study aids to you?",
+      options: [
+        { value: 'footnotes', label: "Very important" },
+        { value: 'someFootnotes', label: "Somewhat important" },
+        { value: 'notImportant', label: "Not important" }
+      ]
+    },
+    {
+      id: 'readingLevelComfort',
+      title: "What reading level do you feel most comfortable with?",
+      options: [
+        { value: 'low', label: "Easy to read (5th-7th grade)" },
+        { value: 'medium', label: "Moderate (8th-10th grade)" },
+        { value: 'high', label: "More advanced (11th grade and up)" }
+      ]
+    },
+    {
+      id: 'memorizationPreference',
+      title: "Do you want a translation that’s easy to memorize?",
+      options: [
+        { value: 'yes', label: "Yes, I want memorization-friendly wording" },
+        { value: 'no', label: "No, not a priority" },
+        { value: 'somewhat', label: "Somewhat important" }
+      ]
+    },
+    {
+      id: 'casualOrFormal',
+      title: "Do you want your Bible language to feel casual or formal?",
+      options: [
+        { value: 'casual', label: "Casual and conversational" },
+        { value: 'formal', label: "Formal and majestic" },
+        { value: 'balanced', label: "A balanced style" }
+      ]
+    }
+  ];
+
+  // Scoring weights for questions & options
+  // Used to add weighted scores to each translation's specific attributes
+  // We'll match user answers with the translation's scores object keys
+
+  // Helper for footnotes importance question
+  // Will give multipliers: very=1, somewhat=0.7, not=0.4
+  function footnotesMultiplier(value) {
+    if (value === 'footnotes') return 1;
+    if (value === 'someFootnotes') return 0.7;
+    return 0.4;
+  }
+
+  // Helper for reading level comfort
+  // low = prefers easier reading level, so translations with lower readingLevel score better
+  // medium = moderate reading level
+  // high = more advanced reading level
+  function readingLevelScore(readingLevel, comfort) {
+    if (comfort === 'low') {
+      // Favor readingLevel <=7, penalty otherwise
+      return readingLevel <= 7 ? 10 : Math.max(0, 10 - (readingLevel - 7) * 1.5);
+    } else if (comfort === 'medium') {
+      return readingLevel >= 7 && readingLevel <= 10 ? 10 : 5;
+    } else {
+      // high
+      return readingLevel >= 10 ? 10 : Math.max(0, 10 - (10 - readingLevel) * 2);
+    }
+  }
+
+  // Helper for memorization
+  function memorizationScore(translationScore, answer) {
+    if (answer === 'yes') return translationScore + 2;
+    if (answer === 'somewhat') return translationScore + 1;
+    return translationScore;
+  }
+
+  // Helper for casual/formal style
+  // We will relate casual -> contemporary; formal -> traditional; balanced -> mixed
+  function styleScore(translation, answer) {
+    if (answer === 'casual') return translation.scores.contemporary || 5;
+    if (answer === 'formal') return translation.scores.traditional || 5;
+    return translation.scores.mixed || 5;
+  }
+
+  function calculateRecommendations(answers) {
+    const scores = {};
+    for (const key in translations) {
+      scores[key] = 0;
+    }
+
+    // Question 1: primaryGoal
+    if (answers.primaryGoal) {
+      for (const key in translations) {
+        scores[key] += (translations[key].scores[answers.primaryGoal] || 5) * 4;
+      }
+    }
+    // Question 2: languageStyle
+    if (answers.languageStyle) {
+      for (const key in translations) {
+        const styleVal = translations[key].scores[answers.languageStyle] || 5;
+        scores[key] += styleVal * 3;
+      }
+    }
+    // Question 3: printOrDigital
+    if (answers.printOrDigital) {
+      for (const key in translations) {
+        if (answers.printOrDigital === 'print') scores[key] += (translations[key].scores.print || 5) * 2;
+        else scores[key] += (translations[key].scores.digitalApp || 5) * 2;
+      }
+    }
+    // Question 4: footnotesImportance
+    if (answers.footnotesImportance) {
+      const multiplier = footnotesMultiplier(answers.footnotesImportance);
+      for (const key in translations) {
+        scores[key] += (translations[key].scores.footnotes || 5) * 2 * multiplier;
+      }
+    }
+    // Question 5: readingLevelComfort
+    if (answers.readingLevelComfort) {
+      for (const key in translations) {
+        scores[key] += readingLevelScore(translations[key].readingLevel, answers.readingLevelComfort) * 3;
+      }
+    }
+    // Question 6: memorizationPreference
+    if (answers.memorizationPreference) {
+      for (const key in translations) {
+        scores[key] = memorizationScore(scores[key], answers.memorizationPreference);
+      }
+    }
+    // Question 7: casualOrFormal
+    if (answers.casualOrFormal) {
+      for (const key in translations) {
+        scores[key] += styleScore(translations[key], answers.casualOrFormal) * 2;
+      }
+    }
+
+    // Sort by total score descending and take top 3
+    return Object.entries(scores)
+      .map(([key, score]) => ({ ...translations[key], score }))
+      .sort((a,b) => b.score - a.score)
+      .slice(0, 3);
+  }
+
+  // Sample John 3:16 verse text per translation for results display
+  function sampleVerse(key) {
+    const samples = {
+      NIV: "For God so loved the world that he gave his one and only Son, that whoever believes in him shall not perish but have eternal life.",
+      NLT: "For this is how God loved the world: He gave his one and only Son, so that everyone who believes in him will not perish but have eternal life.",
+      ESV: "For God so loved the world, that he gave his only Son, that whoever believes in him should not perish but have eternal life.",
+      AMP: "For God so loved the world that He gave His only begotten Son, so that whoever believes in Him shall not perish but have eternal life.",
+      MSG: "This is how much God loved the world: He gave his Son, his one and only Son. And this is why: so that no one need be destroyed; by believing in him, anyone can have a whole and lasting life."
+    };
+    return samples[key] || "";
+  }
+
+  let currentStep = 0;
+  const answers = {};
+
+  const quizContainer = document.getElementById('quiz-container');
+
+  function renderQuestion() {
+    if (currentStep >= questions.length) {
+      renderResults();
+      return;
+    }
+    const q = questions[currentStep];
+
+    quizContainer.innerHTML = `
+      <section>
+        <h2>${q.title}</h2>
+        <div>
+          ${q.options.map(opt => `
+            <button type="button" class="option-btn ${answers[q.id] === opt.value ? 'selected' : ''}" data-value="${opt.value}">
+              ${opt.label}
+            </button>
+          `).join('')}
+        </div>
+        <div class="flex-between" style="margin-top:1rem;">
+          <button id="prev-btn" ${currentStep === 0 ? 'disabled' : ''} class="btn-secondary">Previous</button>
+          <button id="next-btn" disabled class="btn-primary">${currentStep === questions.length -1 ? 'Get My Recommendations' : 'Next'}</button>
+        </div>
+        <button id="skip-btn" class="skip-btn">Not sure? Skip this question</button>
+        <div style="margin-top:1rem; font-size:0.9rem; color:#718096;">
+          Question ${currentStep + 1} of ${questions.length}
+        </div>
+        <div class="progress-bar">
+          <div class="progress-fill" style="width:${((currentStep+1)/questions.length)*100}%"></div>
+        </div>
+      </section>
+    `;
+
+    const optionButtons = quizContainer.querySelectorAll('.option-btn');
+    const nextBtn = quizContainer.querySelector('#next-btn');
+    const prevBtn = quizContainer.querySelector('#prev-btn');
+    const skipBtn = quizContainer.querySelector('#skip-btn');
+
+    optionButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        answers[q.id] = btn.getAttribute('data-value');
+        optionButtons.forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+        nextBtn.disabled = false;
+      });
+    });
+
+    // Enable next if answer already selected
+    if (answers[q.id]) nextBtn.disabled = false;
+
+    nextBtn.addEventListener('click', () => {
+      currentStep++;
+      renderQuestion();
+    });
+    prevBtn.addEventListener('click', () => {
+      if (currentStep > 0) {
+        currentStep--;
+        renderQuestion();
+      }
+    });
+    skipBtn.addEventListener('click', () => {
+      currentStep++;
+      renderQuestion();
+    });
+  }
+
+  function renderResults() {
+    const recommendations = calculateRecommendations(answers);
+    quizContainer.innerHTML = `
+      <section class="results-container">
+        <h2>Your Perfect Bible Match!</h2>
+        <p>Based on your preferences, here are our top recommendations:</p>
+        ${recommendations.map((t, i) => `
+          <div class="${i === 0 ? 'top' : ''}">
+            <h3>${t.name}</h3>
+            <p><strong>Reading Level:</strong> Grade ${t.readingLevel}</p>
+            <p><strong>Strengths:</strong> ${t.strengths}</p>
+            <p><strong>Ideal for:</strong> ${t.idealFor}</p>
+            <p class="italic">Sample: John 3:16</p>
+            <p>${sampleVerse(t.key)}</p>
+          </div>
+        `).join('')}
+        <button id="restart-btn" class="btn-primary">Take the Quiz Again</button>
+      </section>
+    `;
+
+    document.getElementById('restart-btn').addEventListener('click', () => {
+      currentStep = 0;
+      for (const key in answers) delete answers[key];
+      renderQuestion();
+    });
+  }
+
+  renderQuestion();
+
+})();
+</script>
+
+</body>
+</html>
